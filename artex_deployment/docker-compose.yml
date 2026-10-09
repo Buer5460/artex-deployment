@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  artex-db:
+    image: postgres:15-alpine
+    container_name: artex_postgres_instance
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - artex-internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  artex-app:
+    image: autumn27/artex:latest
+    container_name: artex_core_instance
+    restart: unless-stopped
+    depends_on:
+      artex-db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      - DB_HOST=artex-db
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_NAME=${POSTGRES_DB}
+      - LLM_BASE_URL=${LLM_BASE_URL}
+      - LLM_API_KEY=${LLM_API_KEY}
+      - LLM_MODEL=${LLM_MODEL}
+      - ARTEX_MODE=${ARTEX_RUN_MODE}
+    volumes:
+      - ./config/config.yaml:/app/config.yaml:ro
+      - ./data/logs:/app/logs
+    networks:
+      - artex-internal
+      - artex-egress
+
+networks:
+  artex-internal:
+    internal: true
+  artex-egress:
+    driver: bridge

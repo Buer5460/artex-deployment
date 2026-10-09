@@ -1,0 +1,12 @@
+# Local secrets (contains generated DB password / API keys)
+.env
+
+# Runtime data (Postgres data dir, logs)
+artex_deployment/data/
+
+# Generated deployment report
+artex_deployment/DEPLOYMENT_REPORT.md
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
